@@ -36,9 +36,6 @@ public class Slr {
         this.entrada = new ArrayList<>(Arrays.asList(mensagem));
         createMap();
         goTo();
-        //createCanonicalMap();
-        //goTo();
-        //printMensagem();
     }
 
     private void createMap() {
@@ -62,30 +59,34 @@ public class Slr {
     private void goTo() {
         //Estado est = new Estado();
         initCanonicos();
+        System.out.println("\nInicia Estados");
         Estado estado = estadoInicial;
         estadoFinal = estadoInicial;
-        while (estado != null) {
+        do {
             System.out.println("\nGoto: " + estado.getGoTo());
             System.out.println("Estado: " + estado.getStateName());
             for (EstadoNodo n : estado.getValue()) {
                 List<EstadoNodo> nodeList = new ArrayList<>();
-                System.out.println(n.getNaoTerminalEsquerda() + " " + n.getProducaoDividida().toString());
+                System.out.println("\n" + n.getNaoTerminalEsquerda() + " " + n.getProducaoDividida().toString());
                 Estado novoEstado = new Estado(); //Novo estado
                 int dotListIndex = findDotInList(n.getProducaoDividida());
 
                 if (!isDotEndOfString(n.getProducaoDividida(), dotListIndex)) { //Verifica se o ponto já percorreu a produção
                     List<String> temp = new ArrayList<>(n.getProducaoDividida());
-                    int dotStringIndex = temp.get(dotListIndex).indexOf(".");
+                    System.out.println("Antes ponto movido: " + temp.toString());
                     temp.set(dotListIndex, temp.get(dotListIndex).replace(".", ""));
 
                     String symbolAfterDot = temp.get(dotListIndex);
                     System.out.println("Local ponto: " + temp.get(dotListIndex));
+                    
                     List<EstadoNodo> nodeListGerada = null;
                     if (temp.size() > 1 && dotListIndex + 1 < temp.size()) {
                         temp.set(dotListIndex + 1, "." + temp.get(dotListIndex + 1));
-                        nodeListGerada = ntAfterDot(temp, dotListIndex);
+                        System.out.println("Moveu index ponto: " + temp.toString());
+                        nodeListGerada = ntAfterDot(temp, dotListIndex+1);
                     } else {
                         temp.set(dotListIndex, temp.get(dotListIndex) + ".");
+                        System.out.println("Ponto no final: " + temp.toString());
                     }
                     System.out.println("Ponto movido: " + temp.toString());
 
@@ -101,11 +102,13 @@ public class Slr {
                         }
                     }
 
+                    
+                    
+                    novoEstado.setStateName("I" + indexCounterExterno);
+                    System.out.println("Novo Estado: " + novoEstado.getStateName());
                     for(EstadoNodo no: nodeList){
                         System.out.println(no.getProducaoDividida().toString());
                     }
-                    
-                    novoEstado.setStateName("I" + indexCounterExterno);
                     novoEstado.setGoTo(estado.getStateName() + ", " + symbolAfterDot);
                     indexCounterExterno++;
                     novoEstado.setValue(nodeList);
@@ -116,7 +119,7 @@ public class Slr {
             }
             estado = estado.getNextState();
             System.out.println("===\n");
-        }
+        }while (estado != null);
     }
 
     private boolean isDotEndOfString(List<String> lista, int dotListIndex) {
@@ -142,7 +145,7 @@ public class Slr {
         List<EstadoNodo> lista = new ArrayList<>();
         String str = temp.get(dotListIndex);
 
-        if (str.indexOf(".") + 1 < str.length()) {
+        if (str.indexOf(".") != -1 && str.indexOf(".") + 1 < str.length()) {
             char symbolAfterDot = str.charAt(str.indexOf(".") + 1);
             System.out.println("Nao terminal procurado: " + symbolAfterDot);
             Map<Integer, List<String>> m = mapaProducoes.get(String.valueOf(symbolAfterDot));
@@ -206,9 +209,7 @@ public class Slr {
         }
         System.out.println("\n");
 
-        while (estado.getNextState() != null) {
-
-        }
+        
 
     }
 
@@ -218,7 +219,7 @@ public class Slr {
         while(est != null){
             System.out.println("Goto: " + est.getGoTo());
             est.getValue().forEach((e) -> {
-                System.out.print(" " + e.getProducaoDividida().toString());
+                System.out.print(e.getNaoTerminalEsquerda() + e.getProducaoDividida().toString() + "\n");
                 
             });
             System.out.println("Estado: " + est.getStateName() + "\n");
