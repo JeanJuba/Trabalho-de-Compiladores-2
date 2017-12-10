@@ -1,0 +1,5 @@
+A->TB
+B->vTB|E
+T->FC
+C->eFC|E
+F->fF|i

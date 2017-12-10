@@ -1,0 +1,3 @@
+S->XYS|d
+Y->c|e
+X->Y|a
