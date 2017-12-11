@@ -1,3 +1,4 @@
-S->c A a
-A->c B
-B->b c B|d
+S-> a
+S->[ L ]
+L->L ; S
+L->S

@@ -56,6 +56,8 @@ public class Slr {
         }
     }
 
+    //<editor-fold defaultstate="collapsed" desc="ALGORITMO">
+    
     private void goTo() {
         //Estado est = new Estado();
         initCanonicos();
@@ -249,7 +251,12 @@ public class Slr {
         estadoInicial.setValue(line);
         indexCounterExterno++;
     }
+    //</editor-fold>
 
+    //<editor-fold defaultstate="collapsed" desc="TABELA">
+    
+    //</editor-fold>
+    
     //<editor-fold defaultstate="collapsed" desc="PRINT">
     public void printMapa() {
         System.out.println("\n=== MAPA ===");
