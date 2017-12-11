@@ -65,61 +65,70 @@ public class Slr {
         do {
             System.out.println("\nGoto: " + estado.getGoTo());
             System.out.println("Estado: " + estado.getStateName());
-            for (EstadoNodo n : estado.getValue()) {
-                List<EstadoNodo> nodeList = new ArrayList<>();
-                System.out.println("\n" + n.getNaoTerminalEsquerda() + " " + n.getProducaoDividida().toString());
-                Estado novoEstado = new Estado(); //Novo estado
-                int dotListIndex = findDotInList(n.getProducaoDividida());
+            if (estado.getValue() != null) {
+                for (EstadoNodo n : estado.getValue()) {
+                    List<EstadoNodo> nodeList = new ArrayList<>();
+                    System.out.println("\n" + n.getNaoTerminalEsquerda() + " " + n.getProducaoDividida().toString());
+                    Estado novoEstado = new Estado(); //Novo estado
+                    int dotListIndex = findDotInList(n.getProducaoDividida());
 
-                if (!isDotEndOfString(n.getProducaoDividida(), dotListIndex)) { //Verifica se o ponto já percorreu a produção
-                    List<String> temp = new ArrayList<>(n.getProducaoDividida());
-                    System.out.println("Antes ponto movido: " + temp.toString());
-                    temp.set(dotListIndex, temp.get(dotListIndex).replace(".", ""));
+                    if (!isDotEndOfString(n.getProducaoDividida(), dotListIndex)) { //Verifica se o ponto já percorreu a produção
+                        List<String> temp = new ArrayList<>(n.getProducaoDividida());
+                        System.out.println("Antes ponto movido: " + temp.toString());
+                        temp.set(dotListIndex, temp.get(dotListIndex).replace(".", ""));
 
-                    String symbolAfterDot = temp.get(dotListIndex);
-                    System.out.println("Local ponto: " + temp.get(dotListIndex));
-                    
-                    List<EstadoNodo> nodeListGerada = null;
-                    if (temp.size() > 1 && dotListIndex + 1 < temp.size()) {
-                        temp.set(dotListIndex + 1, "." + temp.get(dotListIndex + 1));
-                        System.out.println("Moveu index ponto: " + temp.toString());
-                        nodeListGerada = ntAfterDot(temp, dotListIndex+1);
-                    } else {
-                        temp.set(dotListIndex, temp.get(dotListIndex) + ".");
-                        System.out.println("Ponto no final: " + temp.toString());
-                    }
-                    System.out.println("Ponto movido: " + temp.toString());
+                        String symbolAfterDot = temp.get(dotListIndex);
+                        System.out.println("Local ponto: " + temp.get(dotListIndex));
 
-                    EstadoNodo node = new EstadoNodo();
-                    node.setNaoTerminalEsquerda(n.getNaoTerminalEsquerda());
-                    node.setProducaoDividida(temp); //Produção dividida já com o ponto movido
-                    nodeList.add(node);
-
-                    if (nodeListGerada != null) {
-                        System.out.println("NodeList Gerada.");
-                        for (EstadoNodo estNode : nodeListGerada) {
-                            nodeList.add(estNode);
+                        List<EstadoNodo> nodeListGerada = null;
+                        if (temp.size() > 1 && dotListIndex + 1 < temp.size()) {
+                            temp.set(dotListIndex + 1, "." + temp.get(dotListIndex + 1));
+                            System.out.println("Moveu index ponto: " + temp.toString());
+                            nodeListGerada = ntAfterDot(temp, dotListIndex + 1);
+                        } else {
+                            temp.set(dotListIndex, temp.get(dotListIndex) + ".");
+                            System.out.println("Ponto no final: " + temp.toString());
                         }
-                    }
+                        System.out.println("Ponto movido: " + temp.toString());
 
-                    
-                    
-                    novoEstado.setStateName("I" + indexCounterExterno);
-                    System.out.println("Novo Estado: " + novoEstado.getStateName());
-                    for(EstadoNodo no: nodeList){
-                        System.out.println(no.getProducaoDividida().toString());
+                        EstadoNodo node = new EstadoNodo();
+                        node.setNaoTerminalEsquerda(n.getNaoTerminalEsquerda());
+                        node.setProducaoDividida(temp); //Produção dividida já com o ponto movido
+                        nodeList.add(node);
+
+                        if (nodeListGerada != null) {
+                            System.out.println("NodeList Gerada.");
+                            for (EstadoNodo estNode : nodeListGerada) {
+                                nodeList.add(estNode);
+                            }
+                        }
+
+                        createStringRepresentation(nodeList);
+                        Estado e = findExistingState(createStringRepresentation(nodeList));
+                        if (e == null) {
+                            novoEstado.setStateName("I" + indexCounterExterno);
+                            System.out.println("Novo Estado: " + novoEstado.getStateName());
+                            for (EstadoNodo no : nodeList) {
+                                System.out.println(no.getProducaoDividida().toString());
+                            }
+                            novoEstado.setGoTo(estado.getStateName() + ", " + symbolAfterDot);
+                            indexCounterExterno++;
+                            novoEstado.setValue(nodeList);
+                            novoEstado.setNextState(null);
+                        } else {
+                            novoEstado.setGoTo(estado.getStateName() + ", " + symbolAfterDot);
+                            novoEstado.setStateName(e.getStateName());
+                            novoEstado.setValue(null);
+                        }
+
+                        estadoFinal.setNextState(novoEstado);
+                        estadoFinal = novoEstado;
                     }
-                    novoEstado.setGoTo(estado.getStateName() + ", " + symbolAfterDot);
-                    indexCounterExterno++;
-                    novoEstado.setValue(nodeList);
-                    novoEstado.setNextState(null);
-                    estadoFinal.setNextState(novoEstado);
-                    estadoFinal = novoEstado;
                 }
             }
             estado = estado.getNextState();
             System.out.println("===\n");
-        }while (estado != null);
+        } while (estado != null);
     }
 
     private boolean isDotEndOfString(List<String> lista, int dotListIndex) {
@@ -145,7 +154,7 @@ public class Slr {
         List<EstadoNodo> lista = new ArrayList<>();
         String str = temp.get(dotListIndex);
 
-        if (str.indexOf(".") != -1 && str.indexOf(".") + 1 < str.length()) {
+        if (str.contains(".") && str.indexOf(".") + 1 < str.length()) {
             char symbolAfterDot = str.charAt(str.indexOf(".") + 1);
             System.out.println("Nao terminal procurado: " + symbolAfterDot);
             Map<Integer, List<String>> m = mapaProducoes.get(String.valueOf(symbolAfterDot));
@@ -157,10 +166,61 @@ public class Slr {
                     prodSplited.set(0, "." + prodSplited.get(0));
                     novoNodo.setProducaoDividida(prodSplited);
                     lista.add(novoNodo);
+
+                    char charAfterDot = prodSplited.get(0).charAt(1);
+                    System.out.println("to be found: " + charAfterDot);
+                    if (mapaProducoes.get(String.valueOf(charAfterDot)) != null) {
+                        System.out.println("found: " + charAfterDot);
+                        for (Map.Entry<Integer, List<String>> map : mapaProducoes.get(String.valueOf(charAfterDot)).entrySet()) {
+                            novoNodo = new EstadoNodo();
+                            novoNodo.setNaoTerminalEsquerda(String.valueOf(charAfterDot));
+                            prodSplited = new ArrayList<>(map.getValue());
+                            prodSplited.set(0, "." + prodSplited.get(0));
+                            novoNodo.setProducaoDividida(prodSplited);
+                            lista.add(novoNodo);
+                        }
+                    }
+
                 }
             }
         }
         return lista;
+    }
+
+    private String createStringRepresentation(List<EstadoNodo> nodos) {
+        String represetation = "";
+        for (EstadoNodo n : nodos) {
+
+            represetation = represetation + n.getNaoTerminalEsquerda() + n.getProducaoDividida().toString();
+        }
+
+        System.out.println("Representação estado em string: " + represetation);
+        return represetation;
+    }
+
+    private Estado findExistingState(String stringRepresentation) {
+        System.out.println("Recebido: " + stringRepresentation);
+        Estado estado = estadoInicial;
+
+        while (estado != null) {
+            List<EstadoNodo> nodos = estado.getValue();
+
+            String estadoString = "";
+            if (nodos != null) {
+                for (EstadoNodo node : nodos) {
+                    estadoString = estadoString + node.getNaoTerminalEsquerda() + node.getProducaoDividida().toString();
+                }
+
+                System.out.println("Encontrado: " + estadoString);
+                if (estadoString.equals(stringRepresentation)) {
+                    System.out.println("já existe");
+                    return estado;
+                }
+            }
+            estado = estado.getNextState();
+        }
+
+        return null;
     }
 
     private void initCanonicos() {
@@ -204,30 +264,31 @@ public class Slr {
         System.out.println("\n=== Caninicos ===");
         Estado estado = estadoInicial;
         System.out.println("\nNome: " + estado.getStateName());
-        for (EstadoNodo n : estado.getValue()) {
-            System.out.println(n.getNaoTerminalEsquerda() + " " + n.getProducaoDividida().toString());
+        if (estado.getValue() != null) {
+            for (EstadoNodo n : estado.getValue()) {
+                System.out.println(n.getNaoTerminalEsquerda() + " " + n.getProducaoDividida().toString());
+            }
+            System.out.println("\n");
         }
-        System.out.println("\n");
-
-        
-
     }
 
-    public void printEstados(){
+    public void printEstados() {
         System.out.println("\n=== ESTADOS ===");
         Estado est = estadoInicial;
-        while(est != null){
+        while (est != null) {
             System.out.println("Goto: " + est.getGoTo());
-            est.getValue().forEach((e) -> {
-                System.out.print(e.getNaoTerminalEsquerda() + e.getProducaoDividida().toString() + "\n");
-                
-            });
+            if (est.getValue() != null) {
+                est.getValue().forEach((e) -> {
+                    System.out.print(e.getNaoTerminalEsquerda() + e.getProducaoDividida().toString() + "\n");
+
+                });
+            }
             System.out.println("Estado: " + est.getStateName() + "\n");
             est = est.getNextState();
         }
-        
+
     }
-    
+
     public void printMensagem() {
         System.out.println("\n=== MENSAGEM ===");
         System.out.print(entrada.toString());
