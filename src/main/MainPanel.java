@@ -136,6 +136,7 @@ public class MainPanel extends javax.swing.JPanel {
         // TODO add your handling code here:
         String userHome = System.getProperty("user.home");
         String penDriveJean = "G:\\Java\\Trabalho de Compiladores SLR\\";
+        //String penDriveJean = "/media/eduardo/9369-C039/JAVA/Trabalho de Compiladores SLR";
         JFileChooser jfc = new JFileChooser(penDriveJean);
         jfc.showOpenDialog(null);
         file = jfc.getSelectedFile();
