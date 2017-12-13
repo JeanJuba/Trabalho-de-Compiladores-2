@@ -28,13 +28,15 @@ public class Slr {
 
     //private Map<String, Estado> mapaGoTo;
     private int contadorEntrada = 0;
-    private int indexCounterInterno = 0;
+    //private int indexCounterInterno = 0;
     private int indexCounterExterno = 0;
 
     private Estado estadoInicial;
     private Estado estadoFinal;
     private EstadoNodo nodo;
     private int indexFimLista = 0;
+    
+    private Map<String, Map<String, String>> tabela;
 
     //private String comparator;
     public Slr(String[] productions, String[] mensagem) {
@@ -43,9 +45,12 @@ public class Slr {
         this.mapaFollow = new HashMap<>();
         this.productions = productions;
         this.entrada = new ArrayList<>(Arrays.asList(mensagem));
+        this.tabela = new HashMap<>();
         createMap();
         createMapAux();
         goTo();
+        createTabela();
+        printTabela();
         //first();
         //follow();
 
@@ -72,6 +77,7 @@ public class Slr {
     private void createMapAux() {
         inicial = productions[0].substring(0, productions[0].indexOf("->"));
         for (String s : productions) {
+            s = s.replaceAll("\\s", "");
             mapaProducoesFollow.put(s.substring(0, s.indexOf("->")), new HashSet<>(Arrays.asList(s.substring(s.indexOf("->") + 2, s.length()).split("\\|"))));
         }
         printMapa();
@@ -234,6 +240,7 @@ public class Slr {
         return -1;
     }
 
+    @Deprecated
     private List<EstadoNodo> ntAfterDot(List<String> temp, int dotListIndex) {
         List<EstadoNodo> lista = new ArrayList<>();
         String str = temp.get(dotListIndex);
@@ -417,7 +424,6 @@ public class Slr {
         indexCounterExterno++;
     }
     //</editor-fold>
-
     //<editor-fold defaultstate="collapsed" desc="FIRST">
     private void first() {
         for (Map.Entry<String, Set<String>> e : mapaProducoesFollow.entrySet()) {
@@ -548,6 +554,7 @@ public class Slr {
         return false;
     }
 
+    @Deprecated
     private void removeEmpty() {
         mapaFollow.values().forEach((e) -> {
             e.remove("E");
@@ -558,7 +565,34 @@ public class Slr {
     //</editor-fold>
     //<editor-fold defaultstate="collapsed" desc="TABELA">
     public void createTabela() {
-
+        Estado est = estadoInicial;
+        Set<String> simbolos = new HashSet<>();
+        for(String s: productions){
+            s = s.substring(s.indexOf("->") + 2, s.length());
+            s = s.replaceAll("\\|", " ");
+            System.out.println("Novo s: " + s);
+            String[] split = s.split("\\s+");
+            
+            System.out.println(Arrays.toString(split));
+            for(String str: split){
+                simbolos.add(str);
+            }
+        }
+        
+        System.out.println("Simbolos: " + simbolos.toString());
+        while(est != null){
+            tabela.put(est.getStateName(), createColumns(simbolos));
+            est = est.getNextState();
+        }
+    }
+    
+    private Map<String, String> createColumns(Set<String> columnNames){
+        Map<String, String> mapa = new HashMap<>();
+        
+        for(String str: columnNames){
+            mapa.put(str, "");
+        }
+        return mapa;
     }
 
     //</editor-fold>
@@ -618,6 +652,14 @@ public class Slr {
         mapaFollow.entrySet().forEach((e) -> {
             System.out.println(e.getKey() + e.getValue().toString());
         });
+    }
+    
+    public void printTabela(){
+        for(Map.Entry<String, Map<String, String>> m: tabela.entrySet()){
+            m.getValue().entrySet().forEach((e) -> {
+                System.out.println("Linha: " + m.getKey() + " Coluna: " + e.getKey());
+            });
+        }
     }
     //</editor-fold>
 }
