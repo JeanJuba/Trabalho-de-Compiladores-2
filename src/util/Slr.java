@@ -26,19 +26,17 @@ public class Slr {
 
     List<Estado> canonicos;
 
-    //private Map<String, Estado> mapaGoTo;
     private int contadorEntrada = 0;
-    //private int indexCounterInterno = 0;
     private int indexCounterExterno = 0;
 
     private Estado estadoInicial;
     private Estado estadoFinal;
     private EstadoNodo nodo;
     private int indexFimLista = 0;
-    
-    private Map<String, Map<String, String>> tabela;
 
-    //private String comparator;
+    private Map<String, Map<String, String>> tabela;
+    private Set<String> simbolosEncontrados;
+
     public Slr(String[] productions, String[] mensagem) {
         this.mapaProducoesFollow = new HashMap<>();
         this.mapaFirst = new HashMap<>();
@@ -48,12 +46,20 @@ public class Slr {
         this.tabela = new HashMap<>();
         createMap();
         createMapAux();
+        printMapaAux();
         goTo();
         createTabela();
+        first();
+        follow();
+        
+        printMapa();
+        printMapaAux();
+        printCanonicos();
+        printEstados();
+        printFirst();
+        printFollow();
+        fillMapStates();
         printTabela();
-        //first();
-        //follow();
-
     }
 
     private void createMap() {
@@ -131,6 +137,7 @@ public class Slr {
                         System.out.println("Ponto movido: " + temp.toString());
 
                         List<EstadoNodo> nodeEstadoNodos = estado.getValue();
+                        System.out.println("index: " + index + " EstadoNodos Size: " + nodeEstadoNodos.size());
                         for (int i = index; i < nodeEstadoNodos.size(); i++) {
                             EstadoNodo est = nodeEstadoNodos.get(i);
                             int dotPos = findDotInList(est.getProducaoDividida());
@@ -145,16 +152,15 @@ public class Slr {
                                     node = new EstadoNodo();
                                     node.setNaoTerminalEsquerda(est.getNaoTerminalEsquerda());
                                     node.setProducaoDividida(moveDot(new ArrayList<>(est.getProducaoDividida()), dotPos));
-                                    System.out.println("Colocou: " + n.getNaoTerminalEsquerda()+n.getProducaoDividida());
+                                    System.out.println("Colocou: " + n.getNaoTerminalEsquerda() + n.getProducaoDividida());
                                     nodeList.add(node);
                                 }
-
                             }
                         }
 
                         System.out.println("NodeList original: ");
                         for (EstadoNodo nodeOriginal : nodeList) {
-                            System.out.println(nodeOriginal.getNaoTerminalEsquerda()+nodeOriginal.getProducaoDividida().toString());
+                            System.out.println(nodeOriginal.getNaoTerminalEsquerda() + nodeOriginal.getProducaoDividida().toString());
                         }
 
                         if (nodeListGerada != null) {
@@ -194,21 +200,21 @@ public class Slr {
         } while (estado != null);
     }
 
-    private boolean jaProcessado(List<String> prodSplit, String jaProcessados){
+    private boolean jaProcessado(List<String> prodSplit, String jaProcessados) {
         int dotPos = findDotInList(prodSplit);
         String dotString = prodSplit.get(dotPos);
         int dotIndexStr = dotString.indexOf(".");
-        
-        if(dotIndexStr+1 < dotString.length()){
-            String afterDot = String.valueOf(dotString.charAt(dotIndexStr+1));
-            System.out.println("Ja processados: " +jaProcessados + " AfterDot: " + afterDot);
-            if(jaProcessados.contains(afterDot)){
+
+        if (dotIndexStr + 1 < dotString.length()) {
+            String afterDot = String.valueOf(dotString.charAt(dotIndexStr + 1));
+            System.out.println("Ja processados: " + jaProcessados + " AfterDot: " + afterDot);
+            if (jaProcessados.contains(afterDot)) {
                 return true;
             }
         }
         return false;
     }
-    
+
     private List<String> moveDot(List<String> prodDividida, int dotPos) {
         String str = prodDividida.get(dotPos);
         str = str.replace(".", "");
@@ -240,96 +246,56 @@ public class Slr {
         return -1;
     }
 
-    @Deprecated
-    private List<EstadoNodo> ntAfterDot(List<String> temp, int dotListIndex) {
-        List<EstadoNodo> lista = new ArrayList<>();
-        String str = temp.get(dotListIndex);
-
-        if (str.contains(".") && str.indexOf(".") + 1 < str.length()) { //Se existe ponto e ele não está no fim da string
-            char symbolAfterDot = str.charAt(str.indexOf(".") + 1); //Pega o simbolo depois do ponto
-            System.out.println("Nao terminal procurado: " + symbolAfterDot);
-            Map<Integer, List<String>> m = mapaProducoes.get(String.valueOf(symbolAfterDot));
-            if (m != null) {
-                for (Map.Entry<Integer, List<String>> e : m.entrySet()) {
-
-                    EstadoNodo novoNodo = new EstadoNodo();
-                    novoNodo.setNaoTerminalEsquerda(String.valueOf(symbolAfterDot));
-                    System.out.println(e.getKey() + e.getValue().toString());
-                    List<String> prodSplited = new ArrayList<>(e.getValue());
-                    prodSplited.set(0, "." + prodSplited.get(0));
-                    System.out.println("A adicionar: " + symbolAfterDot + e.getKey() + prodSplited.toString());
-                    novoNodo.setProducaoDividida(prodSplited);
-                    lista.add(novoNodo);
-
-                    char charAfterDot = prodSplited.get(0).charAt(1);
-                    System.out.println("to be found: " + charAfterDot);
-                    if (mapaProducoes.get(String.valueOf(charAfterDot)) != null) {
-                        System.out.println("found: " + charAfterDot);
-                        for (Map.Entry<Integer, List<String>> map : mapaProducoes.get(String.valueOf(charAfterDot)).entrySet()) {
-                            if (!isLoop(charAfterDot, map)) {
-                                System.out.println("Não é loop: " + charAfterDot + " = " + map.getValue().get(0).charAt(0));
-                                System.out.println("A adicionar 2: " + map.getValue().toString());
-                                novoNodo = new EstadoNodo();
-                                novoNodo.setNaoTerminalEsquerda(String.valueOf(charAfterDot));
-                                prodSplited = new ArrayList<>(map.getValue());
-                                prodSplited.set(0, "." + prodSplited.get(0));
-                                System.out.println("Deriva: " + charAfterDot + map.getKey() + prodSplited);
-                                novoNodo.setProducaoDividida(prodSplited);
-                                lista.add(novoNodo);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return lista;
-    }
-
     private List<EstadoNodo> findNtAfterDotImproved(List<EstadoNodo> nodeList, int indexLastAdded) {
-        printNodeLis(nodeList);
+        System.out.println("--- Procurando NT depois ponto. ---");
+        //printNodeList(nodeList);
         System.out.println("Index procurado: " + indexLastAdded);
 
-        EstadoNodo lastNode = nodeList.get(indexLastAdded);
-        System.out.println("CurrentNode: " + lastNode.getNaoTerminalEsquerda() + lastNode.getProducaoDividida().toString());
-        String afterPoint = "";
-        for (int i = 0; i < lastNode.getProducaoDividida().size(); i++) {
-            String pedaco = lastNode.getProducaoDividida().get(i);
-            if (pedaco.contains(".")) {
-                afterPoint = pedaco.substring(pedaco.indexOf(".") + 1);
-            }
-        }
-        System.out.println("Simbolo após o ponto: " + afterPoint);
-        Map<Integer, List<String>> m = mapaProducoes.get(afterPoint);
-        if (m != null) {
-            System.out.println("Encontrou");
-            int countAdded = 0;
-            for (Map.Entry<Integer, List<String>> e : m.entrySet()) {
-                System.out.println("To be added: " + afterPoint + e.getValue().toString());
-                EstadoNodo novoNodo = new EstadoNodo();
-                List<String> prodSplit = new ArrayList<>(e.getValue());
-                prodSplit.set(0, "." + prodSplit.get(0));
-                if (!alreadyInNodeList(nodeList, afterPoint + prodSplit.toString())) {
-                    novoNodo.setNaoTerminalEsquerda(afterPoint);
-                    novoNodo.setProducaoDividida(prodSplit);
-                    nodeList.add(novoNodo);
-
-                } else {
-                    System.out.println("Ja existe");
+        if (indexLastAdded < nodeList.size()) {
+            EstadoNodo lastNode = nodeList.get(indexLastAdded);
+            System.out.println("CurrentNode: " + lastNode.getNaoTerminalEsquerda() + lastNode.getProducaoDividida().toString());
+            String afterPoint = "";
+            for (int i = 0; i < lastNode.getProducaoDividida().size(); i++) {
+                String pedaco = lastNode.getProducaoDividida().get(i);
+                if (pedaco.contains(".")) {
+                    afterPoint = pedaco.substring(pedaco.indexOf(".") + 1);
                 }
-                countAdded++;
             }
+            System.out.println("Simbolo após o ponto: " + afterPoint);
+            Map<Integer, List<String>> m = mapaProducoes.get(afterPoint);
+            if (m != null) {
+                System.out.println("Encontrou");
+                int countAdded = 0;
+                for (Map.Entry<Integer, List<String>> e : m.entrySet()) {
+                    System.out.println("To be added: " + afterPoint + e.getValue().toString());
+                    EstadoNodo novoNodo = new EstadoNodo();
+                    List<String> prodSplit = new ArrayList<>(e.getValue());
+                    prodSplit.set(0, "." + prodSplit.get(0));
+                    if (!alreadyInNodeList(nodeList, afterPoint + prodSplit.toString())) {
+                        novoNodo.setNaoTerminalEsquerda(afterPoint);
+                        novoNodo.setProducaoDividida(prodSplit);
+                        nodeList.add(novoNodo);
 
-            indexFimLista += countAdded;
-            System.out.println("Index do fim lista: " + indexFimLista);
-            if (countAdded > 0) {
-                printNodeLis(nodeList);
+                    } else {
+                        System.out.println("Ja existe");
+                    }
+                    countAdded++;
+                }
+
+                indexFimLista += countAdded;
+                System.out.println("Novos nodos: " + countAdded);
+                System.out.println("Index do fim lista: " + indexFimLista);
+                if (countAdded > 0) {
+                    //indexLastAdded ++;
+                    printNodeList(nodeList);
+                    nodeList = findNtAfterDotImproved(nodeList, indexLastAdded + 1);
+                }
+
+            } else {
+                System.out.println("Não encontrou");
                 nodeList = findNtAfterDotImproved(nodeList, indexLastAdded + 1);
             }
-
-        } else {
-            System.out.println("Não encontrou");
         }
-
         return nodeList;
     }
 
@@ -344,7 +310,7 @@ public class Slr {
         return false;
     }
 
-    private void printNodeLis(List<EstadoNodo> nodeList) {
+    private void printNodeList(List<EstadoNodo> nodeList) {
         System.out.println("\n--- NodeList ---");
         nodeList.forEach((e) -> {
             System.out.println(e.getNaoTerminalEsquerda() + e.getProducaoDividida().toString());
@@ -423,6 +389,7 @@ public class Slr {
         estadoInicial.setValue(line);
         indexCounterExterno++;
     }
+
     //</editor-fold>
     //<editor-fold defaultstate="collapsed" desc="FIRST">
     private void first() {
@@ -430,18 +397,17 @@ public class Slr {
             Set<String> line = new HashSet<>();
 
             e.getValue().forEach((s) -> {
-                //String symbol = s.substring(0, 1);
-                String symbol = s.substring(0, s.indexOf(" "));
+                String symbol = s.substring(0, 1);
                 System.out.println("Symbol: " + symbol);
-                if (symbol.equals(vazio) || symbol.matches("[a-z0-9]+")) {
+                if (symbol.equals("E") || symbol.matches("[a-z0-9]")) {
                     line.add(symbol);
                 } else if (symbol.matches("[A-Z]")) {
                     Set<String> temp = findReplacement(symbol);
 
-                    if (temp.contains(vazio) && s.length() > 1) { //Se existir algo como A->XYZ, X->a|E, Y->b|c, Z->d,e
+                    if (temp.contains("E") && s.length() > 1) { //Se existir algo como A->XYZ, X->a|E, Y->b|c, Z->d,e
                         for (String letter : s.split("")) {
                             temp = findReplacement(letter);
-                            if (temp.contains(vazio) == false) {
+                            if (temp.contains("E") == false) {
                                 break;
                             }
                         }
@@ -465,7 +431,7 @@ public class Slr {
             mapaProducoesFollow.get(naoTerminal).forEach((e) -> {
                 System.out.println("e: " + e);
                 String symbol = e.substring(0, 1);
-                if (symbol.matches("[a-z0-9]+") || symbol.equals(vazio)) {
+                if (symbol.matches("[a-z0-9]") || symbol.equals("E")) {
                     newFisrt.add(symbol);
                 } else {
                     newFisrt.addAll(findReplacement(symbol));
@@ -532,11 +498,12 @@ public class Slr {
                             System.out.println("Adiciona FIRST de: " + nt);
                             newfollow.addAll(mapaFirst.get(nt));
 
-                            if (mapaProducoesFollow.get(nt).contains(vazio)) { //Se derivar palavra vazia "E" também adiciona o follow
+                            if (mapaProducoesFollow.get(nt).contains("E")) { //Se derivar palavra vazia "E" também adiciona o follow
                                 System.out.println("--Procura FOLLOW: " + nt);
                                 newfollow.addAll(findFollow(nt));
                             }
                         }
+
                     });
                 }
             });
@@ -554,7 +521,6 @@ public class Slr {
         return false;
     }
 
-    @Deprecated
     private void removeEmpty() {
         mapaFollow.values().forEach((e) -> {
             e.remove("E");
@@ -567,32 +533,62 @@ public class Slr {
     public void createTabela() {
         Estado est = estadoInicial;
         Set<String> simbolos = new HashSet<>();
-        for(String s: productions){
+        for (String s : productions) {
             s = s.substring(s.indexOf("->") + 2, s.length());
             s = s.replaceAll("\\|", " ");
             System.out.println("Novo s: " + s);
             String[] split = s.split("\\s+");
-            
+
             System.out.println(Arrays.toString(split));
-            for(String str: split){
+            for (String str : split) {
                 simbolos.add(str);
             }
         }
-        
+        simbolosEncontrados = new HashSet<>(simbolos);
         System.out.println("Simbolos: " + simbolos.toString());
-        while(est != null){
+        while (est != null) {
             tabela.put(est.getStateName(), createColumns(simbolos));
             est = est.getNextState();
         }
     }
-    
-    private Map<String, String> createColumns(Set<String> columnNames){
+
+    private Map<String, String> createColumns(Set<String> columnNames) {
         Map<String, String> mapa = new HashMap<>();
-        
-        for(String str: columnNames){
+
+        for (String str : columnNames) {
             mapa.put(str, "");
         }
         return mapa;
+    }
+
+    private void fillMapStates() {
+        System.out.println("--- Fill Map ---");
+        for (String s : simbolosEncontrados) {
+            if (mapaProducoes.get(s) == null) {
+                System.out.println("s: " + s);
+                Estado estado = estadoInicial;
+                while (estado != null) {
+                    String strName = estado.getGoTo();
+
+                    System.out.println("Goto: " + strName);
+                    if (strName.contains(",")) {
+                        String stateName = strName.split(",")[0];
+                        String stateSymbol = strName.split(",")[1];
+                        stateSymbol = stateSymbol.trim();
+                        System.out.println("s: " + s + " StateSymbol: " + stateSymbol);
+                        if (s.equals(stateSymbol)) {
+                            tabela.get(stateName).replace(s, estado.getStateName());
+                        }
+                    }
+                    estado = estado.getNextState();
+                }
+            }else{
+                Set<String> follow = mapaFollow.get(s);
+                System.out.println("NT: " + s);
+                System.out.println("NT: " + s + " follow: " + follow.toString());
+                
+            }
+        }
     }
 
     //</editor-fold>
@@ -605,7 +601,14 @@ public class Slr {
             });
         }
     }
-
+    
+     public void printMapaAux() {
+        System.out.println("\n=== MAPA AUX===");
+        for (Map.Entry<String, Set<String>> e : mapaProducoesFollow.entrySet()) {
+            System.out.println(e.getKey() + e.getValue().toString());
+        }
+    }
+    
     public void printCanonicos() {
         System.out.println("\n=== Caninicos ===");
         Estado estado = estadoInicial;
@@ -653,11 +656,11 @@ public class Slr {
             System.out.println(e.getKey() + e.getValue().toString());
         });
     }
-    
-    public void printTabela(){
-        for(Map.Entry<String, Map<String, String>> m: tabela.entrySet()){
+
+    public void printTabela() {
+        for (Map.Entry<String, Map<String, String>> m : tabela.entrySet()) {
             m.getValue().entrySet().forEach((e) -> {
-                System.out.println("Linha: " + m.getKey() + " Coluna: " + e.getKey());
+                System.out.println("Linha: " + m.getKey() + " Coluna: " + e.getKey() + " Valor: " + e.getValue());
             });
         }
     }

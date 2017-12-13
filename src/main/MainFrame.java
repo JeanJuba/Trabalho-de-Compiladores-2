@@ -20,14 +20,14 @@ public class MainFrame extends javax.swing.JFrame {
      */
     public MainFrame() {
         initComponents();
-        setPanel(MainPanel.class);
+        setPanel(MainPanel.class, "Menu Principal");
     }
 
     
-    public void setPanel(Class<? extends JPanel> clazz){
+    public void setPanel(Class<? extends JPanel> clazz, String name){
         try {
             JPanel jp = clazz.newInstance();
-            
+            this.setTitle(name);
             this.setVisible(false);
             panel.removeAll();
             panel.add(jp);
